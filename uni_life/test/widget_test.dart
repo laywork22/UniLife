@@ -1,30 +1,26 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:uni_life/main.dart';
+import 'package:uni_life/core/utils/validators.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('Validators', () {
+    test('notEmpty rifiuta stringhe vuote', () {
+      expect(Validators.notEmpty(''), isNotNull);
+      expect(Validators.notEmpty('   '), isNotNull);
+      expect(Validators.notEmpty('valido'), isNull);
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    test('cfuRange accetta 1..30', () {
+      expect(Validators.cfuRange('0'), isNotNull);
+      expect(Validators.cfuRange('9'), isNull);
+      expect(Validators.cfuRange('31'), isNotNull);
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('gradeRange accetta 18..31 e stringa vuota', () {
+      expect(Validators.gradeRange(''), isNull);
+      expect(Validators.gradeRange('17'), isNotNull);
+      expect(Validators.gradeRange('18'), isNull);
+      expect(Validators.gradeRange('31'), isNull);
+      expect(Validators.gradeRange('32'), isNotNull);
+    });
   });
 }

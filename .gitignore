@@ -1,0 +1,136 @@
+# =============================================================================
+# UniLife — .gitignore
+# Pattern senza '/' iniziale corrispondono a qualunque livello del repo;
+# pattern con '/' iniziale ancorano alla root del repository.
+# =============================================================================
+
+# --- Strumenti di lavoro locali (AI / assistenti) -----------------------------
+.claude/
+.claude.json
+.codeium/
+.continue/
+.cursor/
+.aider*
+.windsurf/
+
+# --- Editor / IDE ------------------------------------------------------------
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.fleet/
+.history/
+.atom/
+.swiftpm/
+.zed/
+*.swp
+*.swo
+*~
+*.bak
+
+# --- Sistema operativo -------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# --- Flutter / Dart ----------------------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+app.*.symbols
+app.*.map.json
+*.lock.lock
+
+# Cartelle "ephemeral" dei wrapper desktop generate da Flutter
+**/macos/Flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/windows/flutter/ephemeral/
+
+# --- Android -----------------------------------------------------------------
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+*.jks
+*.keystore
+
+# --- iOS / macOS -------------------------------------------------------------
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Podfile.lock
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Pods/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+
+# --- Linux / Windows desktop -------------------------------------------------
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+
+# --- Log / segreti / variabili d'ambiente ------------------------------------
+*.log
+*.log.*
+.env
+.env.*
+!.env.example
+*.local
+secrets.json
+*.pem
+*.key
+
+# --- Compilati / cache vari --------------------------------------------------
+*.class
+*.pyc
+__pycache__/
+*.o
+*.obj
+*.exe
+*.dll
+*.dylib
+*.so
+node_modules/
+.npm/
+
+# --- Output e artefatti di test ----------------------------------------------
+/test/.test_coverage.dart
+test-results/
+*.lcov
+
+# --- Migrazioni temporanee Flutter -------------------------------------------
+migrate_working_dir/
