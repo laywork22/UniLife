@@ -6,6 +6,7 @@ import '../../core/utils/date_utils.dart';
 import '../../core/utils/validators.dart';
 import '../../data/models/enums.dart';
 import '../../shared/widgets/app_snackbar.dart';
+import '../../shared/widgets/confirm_dialog.dart';
 import '../../state/course_provider.dart';
 import '../../state/task_provider.dart';
 
@@ -106,12 +107,33 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     context.pop();
   }
 
+  Future<void> _delete() async {
+    final ok = await showConfirmDialog(
+      context,
+      title: 'Eliminare l\'attività?',
+      message: 'L\'operazione non è reversibile.',
+    );
+    if (!ok || !mounted) return;
+    await context.read<TaskProvider>().remove(widget.taskId!);
+    if (!mounted) return;
+    AppSnackbar.show(context, 'Attività eliminata', icon: Icons.delete);
+    context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final courses = context.watch<CourseProvider>().all;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Modifica attività' : 'Nuova attività'),
+        actions: [
+          if (widget.isEdit)
+            IconButton(
+              tooltip: 'Elimina',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _delete,
+            ),
+        ],
       ),
       body: Form(
         key: _formKey,

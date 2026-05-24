@@ -46,11 +46,23 @@ class _CourseListScreenState extends State<CourseListScreen>
     final coursesProv = context.watch<CourseProvider>();
     final examsProv = context.watch<ExamProvider>();
 
+    // La TabBar vive dentro l'AppBar: usiamo il foreground dell'AppBar come
+    // tinta di riferimento, perché in light è la `primary` (teal) e in dark è
+    // un grigio chiaro — sempre con buon contrasto su quello sfondo.
+    final appBarFg = Theme.of(context).appBarTheme.foregroundColor ??
+        (Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : Colors.white);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Course List'),
+        title: const Text('Corsi'),
         bottom: TabBar(
           controller: _tabs,
+          labelColor: appBarFg,
+          unselectedLabelColor: appBarFg.withValues(alpha: 0.65),
+          indicatorColor: appBarFg,
+          indicatorWeight: 2.5,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w700),
           tabs: const [
             Tab(text: 'Correnti'),
             Tab(text: 'Terminate'),
@@ -83,6 +95,8 @@ class _CourseListScreenState extends State<CourseListScreen>
                           .length;
                       return done / exams.length;
                     },
+                    gradeForCourse: (Course c) =>
+                        examsProv.latestPassedGrade(c.id),
                   ),
           ),
         ],
@@ -95,10 +109,12 @@ class _CoursesList extends StatelessWidget {
   const _CoursesList({
     required this.courses,
     required this.progressForCourse,
+    required this.gradeForCourse,
   });
 
   final List<Course> courses;
   final double Function(Course) progressForCourse;
+  final int? Function(Course) gradeForCourse;
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +135,7 @@ class _CoursesList extends StatelessWidget {
         return CourseCard(
           course: c,
           progress: progressForCourse(c),
+          latestGrade: gradeForCourse(c),
           onTap: () => context.push('/courses/${c.id}'),
         );
       },

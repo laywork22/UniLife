@@ -29,7 +29,6 @@ class NotificationService {
       await _plugin.initialize(settings: settings);
       _initialized = true;
     } catch (_) {
-      // Su Windows / piattaforme non supportate evitiamo che il boot fallisca.
       _initialized = false;
     }
   }

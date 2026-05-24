@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/utils/validators.dart';
 import '../../data/models/enums.dart';
 import '../../shared/widgets/app_snackbar.dart';
@@ -23,7 +24,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
   final _docente = TextEditingController();
   final _cfu = TextEditingController();
   final _semestre = TextEditingController(text: '1');
-  final _voto = TextEditingController();
   final _descrizione = TextEditingController();
   final _materiali = TextEditingController();
   CourseStatus _stato = CourseStatus.inCorso;
@@ -38,7 +38,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
         _docente.text = c.docente;
         _cfu.text = c.cfu.toString();
         _semestre.text = c.semestre.toString();
-        _voto.text = c.votoOttenuto?.toString() ?? '';
         _descrizione.text = c.descrizione ?? '';
         _materiali.text = c.materiali.join('\n');
         _stato = c.stato;
@@ -52,7 +51,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
     _docente.dispose();
     _cfu.dispose();
     _semestre.dispose();
-    _voto.dispose();
     _descrizione.dispose();
     _materiali.dispose();
     super.dispose();
@@ -66,7 +64,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();
-    final voto = _voto.text.isEmpty ? null : int.tryParse(_voto.text);
 
     if (widget.isEdit) {
       final existing = p.byId(widget.courseId!);
@@ -77,8 +74,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
         cfu: int.parse(_cfu.text),
         semestre: int.parse(_semestre.text),
         stato: _stato,
-        votoOttenuto: voto,
-        clearVoto: voto == null,
         descrizione: _descrizione.text.trim(),
         materiali: materiali,
       ));
@@ -156,17 +151,27 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
               onChanged: (v) =>
                   setState(() => _stato = v ?? CourseStatus.inCorso),
             ),
-            if (_stato == CourseStatus.superato) ...[
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _voto,
-                decoration: const InputDecoration(
-                  labelText: 'Voto (18-30 oppure 31 per la lode)',
+            if (_stato == CourseStatus.superato)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline,
+                        size: 16, color: AppColors.info),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Il voto si registra sull\'esame, non sul corso. '
+                        'Apri la lista esami per inserire o aggiornare il voto.',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                keyboardType: TextInputType.number,
-                validator: Validators.gradeRange,
               ),
-            ],
             const SizedBox(height: 12),
             TextFormField(
               controller: _descrizione,

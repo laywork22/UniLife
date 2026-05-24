@@ -1,6 +1,11 @@
 import 'enums.dart';
 
 /// DF-1.1 — Corso universitario.
+///
+/// Il voto NON è proprietà del corso: appartiene alle istanze di [Exam]
+/// associate via `courseId`. Uno studente può sostenere lo stesso esame più
+/// volte (rifiutando il voto), quindi il voto "ufficiale" del corso si deriva
+/// dall'esame `completato` più recente.
 class Course {
   final String id;
   final String nome;
@@ -8,7 +13,6 @@ class Course {
   final int cfu;
   final int semestre;
   final CourseStatus stato;
-  final int? votoOttenuto;
   final String? descrizione;
   final String? note;
   final List<String> materiali; // URL ai materiali (UC-10)
@@ -20,7 +24,6 @@ class Course {
     required this.cfu,
     required this.semestre,
     this.stato = CourseStatus.inCorso,
-    this.votoOttenuto,
     this.descrizione,
     this.note,
     this.materiali = const [],
@@ -33,11 +36,9 @@ class Course {
     int? cfu,
     int? semestre,
     CourseStatus? stato,
-    int? votoOttenuto,
     String? descrizione,
     String? note,
     List<String>? materiali,
-    bool clearVoto = false,
   }) {
     return Course(
       id: id ?? this.id,
@@ -46,7 +47,6 @@ class Course {
       cfu: cfu ?? this.cfu,
       semestre: semestre ?? this.semestre,
       stato: stato ?? this.stato,
-      votoOttenuto: clearVoto ? null : (votoOttenuto ?? this.votoOttenuto),
       descrizione: descrizione ?? this.descrizione,
       note: note ?? this.note,
       materiali: materiali ?? this.materiali,
@@ -60,10 +60,9 @@ class Course {
         'cfu': cfu,
         'semestre': semestre,
         'stato': stato.name,
-        'voto': votoOttenuto,
         'descrizione': descrizione,
         'note': note,
-        // List<String> serializzata come stringa con separatore "|" (no commas in URL fragments).
+        // List<String> serializzata come stringa con separatore "|".
         'materiali': materiali.join('|'),
       };
 
@@ -74,7 +73,6 @@ class Course {
         cfu: (m['cfu'] as int?) ?? 0,
         semestre: (m['semestre'] as int?) ?? 1,
         stato: CourseStatusX.fromName(m['stato'] as String?),
-        votoOttenuto: m['voto'] as int?,
         descrizione: m['descrizione'] as String?,
         note: m['note'] as String?,
         materiali: (m['materiali'] as String?)?.isNotEmpty == true

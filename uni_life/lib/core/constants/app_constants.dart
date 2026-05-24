@@ -13,7 +13,7 @@ class AppConstants {
   static const int longBreakMinutes = 15;
 
   static const String dbName = 'uni_life.db';
-  static const int dbVersion = 1;
+  static const int dbVersion = 3;
   static const String tableCourses = 'courses';
   static const String tableExams = 'exams';
   static const String tableSessions = 'study_sessions';

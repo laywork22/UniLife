@@ -25,23 +25,58 @@ class StatsProvider extends ChangeNotifier {
 
   void _onChange() => notifyListeners();
 
-  int get cfuAcquisiti => _courses.all
-      .where((c) => c.stato == CourseStatus.superato)
-      .fold<int>(0, (acc, c) => acc + c.cfu);
+  /// CFU acquisiti = somma dei CFU dei corsi con almeno un esame `completato`
+  /// (un esame `annullato` non concorre, anche se lo `stato` del corso è
+  /// `superato`). Verrà aggiornata in [_orphanContribution] per gli esami
+  /// "standalone" (senza corso) appena introdotti.
+  int get cfuAcquisiti {
+    int total = 0;
+    for (final c in _courses.all) {
+      if (_exams.latestPassedGrade(c.id) != null) {
+        total += c.cfu;
+      }
+    }
+    return total + _orphanCfu;
+  }
 
   int get cfuTotali =>
-      _courses.all.fold<int>(0, (acc, c) => acc + c.cfu);
+      _courses.all.fold<int>(0, (acc, c) => acc + c.cfu) + _orphanCfu;
 
-  /// Media voti ponderata sui CFU dei corsi superati.
+  /// CFU degli esami standalone (senza corso) già superati.
+  int get _orphanCfu => _exams.all
+      .where((e) =>
+          e.courseId == null &&
+          e.status == ExamStatus.completato &&
+          e.cfu != null)
+      .fold<int>(0, (acc, e) => acc + (e.cfu ?? 0));
+
+  /// Media voti ponderata sui CFU.
+  /// Per ogni corso con un esame `completato` (vedi [ExamProvider.latestPassedGrade])
+  /// usiamo `course.cfu` come peso e il voto dell'ultimo esame superato.
+  /// Inoltre concorrono alla media gli esami "standalone" (senza corso)
+  /// `completato` con voto e `cfu` valorizzati.
   double get mediaPonderata {
-    final superati = _courses.all
-        .where((c) => c.stato == CourseStatus.superato && c.votoOttenuto != null);
-    if (superati.isEmpty) return 0;
-    final num totWeight = superati.fold<int>(0, (a, c) => a + c.cfu);
-    final num totGrade = superati.fold<int>(
-      0,
-      (a, c) => a + ((c.votoOttenuto!.clamp(18, 30)) * c.cfu),
-    );
+    int totWeight = 0;
+    int totGrade = 0;
+    // 1) Esami associati a un corso.
+    for (final c in _courses.all) {
+      final grade = _exams.latestPassedGrade(c.id);
+      if (grade == null) continue;
+      final effective = grade.clamp(18, 30); // 31 = lode → 30 in media
+      totWeight += c.cfu;
+      totGrade += effective * c.cfu;
+    }
+    // 2) Esami standalone.
+    for (final e in _exams.all) {
+      if (e.courseId != null) continue;
+      if (e.status != ExamStatus.completato) continue;
+      final g = e.grade;
+      final cfu = e.cfu;
+      if (g == null || cfu == null) continue;
+      final effective = g.clamp(18, 30);
+      totWeight += cfu;
+      totGrade += effective * cfu;
+    }
     return totWeight == 0 ? 0 : totGrade / totWeight;
   }
 

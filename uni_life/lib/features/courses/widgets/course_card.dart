@@ -9,11 +9,13 @@ class CourseCard extends StatelessWidget {
     super.key,
     required this.course,
     required this.progress,
+    this.latestGrade,
     this.onTap,
   });
 
   final Course course;
   final double progress;
+  final int? latestGrade;
   final VoidCallback? onTap;
 
   @override
@@ -72,7 +74,7 @@ class CourseCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '${course.semestre}° semestre'
-                '${course.stato == CourseStatus.superato && course.votoOttenuto != null ? "  ·  Voto ${course.votoOttenuto}" : ""}',
+                '${course.stato == CourseStatus.superato && latestGrade != null ? "  ·  Voto ${latestGrade == 31 ? "30L" : latestGrade}" : ""}',
                 style: TextStyle(
                   color: scheme.onSurfaceVariant,
                   fontSize: 12,

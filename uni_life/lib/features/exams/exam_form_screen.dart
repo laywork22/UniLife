@@ -23,11 +23,14 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _notes = TextEditingController();
-  String? _courseId;
+  final _cfu = TextEditingController();
+  final _grade = TextEditingController();
+  String? _courseId; // null = esame standalone (senza corso registrato)
   DateTime _date = DateTime.now().add(const Duration(days: 7));
   TimeOfDay _time = const TimeOfDay(hour: 9, minute: 0);
   ExamType _type = ExamType.scritto;
   Priority _priority = Priority.media;
+  ExamStatus _status = ExamStatus.prossimo;
 
   @override
   void initState() {
@@ -37,11 +40,14 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
       if (e != null) {
         _title.text = e.title;
         _notes.text = e.notes ?? '';
+        _cfu.text = e.cfu?.toString() ?? '';
+        _grade.text = e.grade?.toString() ?? '';
         _courseId = e.courseId;
         _date = e.date;
         _time = TimeOfDay.fromDateTime(e.date);
         _type = e.type;
         _priority = e.priority;
+        _status = e.status;
       }
     }
   }
@@ -50,14 +56,17 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
   void dispose() {
     _title.dispose();
     _notes.dispose();
+    _cfu.dispose();
+    _grade.dispose();
     super.dispose();
   }
 
   Future<void> _pickDate() async {
+    // Ammettiamo anche date passate: utile per registrare esami già sostenuti.
     final picked = await showDatePicker(
       context: context,
       initialDate: _date,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      firstDate: DateTime(2000),
       lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
     );
     if (picked != null) setState(() => _date = picked);
@@ -69,19 +78,18 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
   }
 
   Future<void> _save() async {
-    if (_courseId == null) {
-      AppSnackbar.show(context, 'Seleziona un corso', icon: Icons.warning);
-      return;
-    }
     if (!_formKey.currentState!.validate()) return;
-    final dateError = Validators.futureDate(_date);
-    if (dateError != null) {
-      AppSnackbar.show(context, dateError, icon: Icons.warning);
-      return;
-    }
 
     final combined =
         DateTime(_date.year, _date.month, _date.day, _time.hour, _time.minute);
+
+    final cfuValue = _courseId == null
+        ? int.tryParse(_cfu.text)
+        : null; // se c'è il corso, i CFU si leggono dal corso
+
+    final gradeValue =
+        _grade.text.trim().isEmpty ? null : int.tryParse(_grade.text);
+
     final p = context.read<ExamProvider>();
     if (widget.isEdit) {
       final existing = p.byId(widget.examId!);
@@ -89,18 +97,27 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
       await p.edit(existing.copyWith(
         title: _title.text.trim(),
         courseId: _courseId,
+        clearCourse: _courseId == null,
+        cfu: cfuValue,
+        clearCfu: cfuValue == null,
         date: combined,
         type: _type,
         priority: _priority,
+        status: _status,
+        grade: gradeValue,
+        clearGrade: gradeValue == null,
         notes: _notes.text.trim(),
       ));
     } else {
       await p.add(
         title: _title.text.trim(),
-        courseId: _courseId!,
+        courseId: _courseId,
+        cfu: cfuValue,
         date: combined,
         type: _type,
         priority: _priority,
+        status: _status,
+        grade: gradeValue,
         notes: _notes.text.trim(),
       );
     }
@@ -114,6 +131,8 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
   @override
   Widget build(BuildContext context) {
     final courses = context.watch<CourseProvider>().all;
+    final scheme = Theme.of(context).colorScheme;
+    final isStandalone = _courseId == null;
 
     return Scaffold(
       appBar: AppBar(
@@ -130,16 +149,38 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
               validator: (v) => Validators.notEmpty(v, field: 'Titolo'),
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<String?>(
               initialValue: _courseId,
               decoration: const InputDecoration(labelText: 'Corso'),
-              items: courses
-                  .map((c) => DropdownMenuItem(value: c.id, child: Text(c.nome)))
-                  .toList(),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('— Senza corso (registra solo i CFU) —'),
+                ),
+                ...courses.map(
+                  (c) => DropdownMenuItem<String?>(
+                    value: c.id,
+                    child: Text(c.nome),
+                  ),
+                ),
+              ],
               onChanged: (v) => setState(() => _courseId = v),
-              validator: (v) =>
-                  v == null ? 'Associa l\'esame a un corso' : null,
             ),
+            if (isStandalone) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _cfu,
+                decoration: const InputDecoration(
+                  labelText: 'CFU (richiesto per esami senza corso)',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  if (!isStandalone) return null;
+                  final err = Validators.cfuRange(v);
+                  return err;
+                },
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
@@ -180,12 +221,46 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
                   setState(() => _priority = v ?? Priority.media),
             ),
             const SizedBox(height: 12),
+            DropdownButtonFormField<ExamStatus>(
+              initialValue: _status,
+              decoration: const InputDecoration(labelText: 'Stato'),
+              items: ExamStatus.values
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s.label)))
+                  .toList(),
+              onChanged: (v) =>
+                  setState(() => _status = v ?? ExamStatus.prossimo),
+            ),
+            if (_status == ExamStatus.completato) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _grade,
+                decoration: const InputDecoration(
+                  labelText: 'Voto (18-30, 31 per la lode)',
+                ),
+                keyboardType: TextInputType.number,
+                validator: Validators.gradeRange,
+              ),
+            ],
+            const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
               decoration: const InputDecoration(labelText: 'Note'),
               maxLines: 3,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                isStandalone
+                    ? 'Esame "standalone": registri direttamente i CFU; concorrerà alla media solo se lo stato è «Completato» con un voto.'
+                    : 'L\'esame è legato al corso selezionato; i suoi CFU sono quelli del corso.',
+                style: TextStyle(
+                  color: scheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _save,
               icon: const Icon(Icons.save),

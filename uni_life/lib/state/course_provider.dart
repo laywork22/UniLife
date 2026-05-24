@@ -58,7 +58,8 @@ class CourseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Course? byId(String id) {
+  Course? byId(String? id) {
+    if (id == null) return null;
     for (final c in _all) {
       if (c.id == id) return c;
     }

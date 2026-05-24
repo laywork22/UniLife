@@ -24,13 +24,11 @@ class ExamProvider extends ChangeNotifier {
       ? _all
       : _all.where((e) => e.status == _filter).toList();
 
+  /// Esami "in arrivo": tutti quelli ancora marcati `prossimo`, indipendente
+  /// dalla data — così anche un appello scaduto ma non ancora sostenuto resta
+  /// visibile come reminder finché lo studente non lo aggiorna.
   List<Exam> get upcoming {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return _all
-        .where((e) =>
-            e.status == ExamStatus.prossimo && !e.date.isBefore(today))
-        .toList()
+    return _all.where((e) => e.status == ExamStatus.prossimo).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
   }
 
@@ -66,21 +64,41 @@ class ExamProvider extends ChangeNotifier {
   List<Exam> byCourse(String courseId) =>
       _all.where((e) => e.courseId == courseId).toList();
 
+  /// Voto "ufficiale" del corso: il `grade` dell'esame `completato` con la
+  /// data più recente (lo studente può aver rifiutato voti precedenti tramite
+  /// `annullato`). Restituisce `null` se nessun esame è ancora stato superato.
+  int? latestPassedGrade(String courseId) {
+    final passed = _all
+        .where((e) =>
+            e.courseId == courseId &&
+            e.status == ExamStatus.completato &&
+            e.grade != null)
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    return passed.isEmpty ? null : passed.first.grade;
+  }
+
   Future<Exam> add({
     required String title,
-    required String courseId,
     required DateTime date,
+    String? courseId,
+    int? cfu,
     ExamType type = ExamType.scritto,
     Priority priority = Priority.media,
+    ExamStatus status = ExamStatus.prossimo,
+    int? grade,
     String? notes,
   }) async {
     final e = Exam(
       id: _uuid.v4(),
       title: title,
       courseId: courseId,
+      cfu: cfu,
       date: date,
       type: type,
       priority: priority,
+      status: status,
+      grade: grade,
       notes: notes,
     );
     await _repo.insert(e);

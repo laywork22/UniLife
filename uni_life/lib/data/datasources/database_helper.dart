@@ -37,7 +37,74 @@ class DatabaseHelper {
         await db.execute('PRAGMA foreign_keys = ON');
       },
       onCreate: _createSchema,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  /// Migrazioni di schema.
+  /// - v1 → v2: il voto è stato rimosso dalla tabella `courses` (il voto
+  ///   appartiene a [Exam], non al corso).
+  /// - v2 → v3: `exams.course_id` diventa nullable e viene aggiunta la
+  ///   colonna `cfu` per gli esami "standalone" inseriti senza un corso.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('PRAGMA foreign_keys = OFF');
+      await db.execute('''
+        CREATE TABLE ${AppConstants.tableCourses}_new (
+          id TEXT PRIMARY KEY,
+          nome TEXT NOT NULL,
+          docente TEXT NOT NULL,
+          cfu INTEGER NOT NULL,
+          semestre INTEGER NOT NULL,
+          stato TEXT NOT NULL,
+          descrizione TEXT,
+          note TEXT,
+          materiali TEXT
+        )
+      ''');
+      await db.execute('''
+        INSERT INTO ${AppConstants.tableCourses}_new
+          (id, nome, docente, cfu, semestre, stato, descrizione, note, materiali)
+        SELECT id, nome, docente, cfu, semestre, stato, descrizione, note, materiali
+        FROM ${AppConstants.tableCourses}
+      ''');
+      await db.execute('DROP TABLE ${AppConstants.tableCourses}');
+      await db.execute(
+          'ALTER TABLE ${AppConstants.tableCourses}_new RENAME TO ${AppConstants.tableCourses}');
+      await db.execute('PRAGMA foreign_keys = ON');
+    }
+    if (oldVersion < 3) {
+      await db.execute('PRAGMA foreign_keys = OFF');
+      await db.execute('''
+        CREATE TABLE ${AppConstants.tableExams}_new (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          course_id TEXT,
+          cfu INTEGER,
+          date TEXT NOT NULL,
+          type TEXT NOT NULL,
+          priority TEXT NOT NULL,
+          status TEXT NOT NULL,
+          grade INTEGER,
+          notes TEXT,
+          FOREIGN KEY (course_id) REFERENCES ${AppConstants.tableCourses}(id) ON DELETE SET NULL
+        )
+      ''');
+      await db.execute('''
+        INSERT INTO ${AppConstants.tableExams}_new
+          (id, title, course_id, date, type, priority, status, grade, notes)
+        SELECT id, title, course_id, date, type, priority, status, grade, notes
+        FROM ${AppConstants.tableExams}
+      ''');
+      await db.execute('DROP TABLE ${AppConstants.tableExams}');
+      await db.execute(
+          'ALTER TABLE ${AppConstants.tableExams}_new RENAME TO ${AppConstants.tableExams}');
+      await db.execute(
+          'CREATE INDEX idx_exams_course ON ${AppConstants.tableExams}(course_id)');
+      await db.execute(
+          'CREATE INDEX idx_exams_date ON ${AppConstants.tableExams}(date)');
+      await db.execute('PRAGMA foreign_keys = ON');
+    }
   }
 
   Future<void> _createSchema(Database db, int version) async {
@@ -49,7 +116,6 @@ class DatabaseHelper {
         cfu INTEGER NOT NULL,
         semestre INTEGER NOT NULL,
         stato TEXT NOT NULL,
-        voto INTEGER,
         descrizione TEXT,
         note TEXT,
         materiali TEXT
@@ -60,14 +126,15 @@ class DatabaseHelper {
       CREATE TABLE ${AppConstants.tableExams} (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
-        course_id TEXT NOT NULL,
+        course_id TEXT,
+        cfu INTEGER,
         date TEXT NOT NULL,
         type TEXT NOT NULL,
         priority TEXT NOT NULL,
         status TEXT NOT NULL,
         grade INTEGER,
         notes TEXT,
-        FOREIGN KEY (course_id) REFERENCES ${AppConstants.tableCourses}(id) ON DELETE CASCADE
+        FOREIGN KEY (course_id) REFERENCES ${AppConstants.tableCourses}(id) ON DELETE SET NULL
       )
     ''');
     await db.execute(

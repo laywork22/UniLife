@@ -95,9 +95,11 @@ class CourseDetailScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       _InfoBox(
                         label: 'Voto',
-                        value: course.votoOttenuto == null
-                            ? '—'
-                            : '${course.votoOttenuto}',
+                        value: () {
+                          final g = examsProv.latestPassedGrade(courseId);
+                          if (g == null) return '—';
+                          return g == 31 ? '30L' : '$g';
+                        }(),
                       ),
                     ],
                   ),

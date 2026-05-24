@@ -76,7 +76,12 @@ class _ExamDetailScreenState extends State<ExamDetailScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
         children: [
-          _LabelValue(label: 'Docente', value: course?.docente ?? '—'),
+          _LabelValue(
+              label: 'Corso',
+              value: course?.nome ?? '— senza corso —'),
+          const SizedBox(height: 12),
+          _LabelValue(
+              label: 'Docente', value: course?.docente ?? '—'),
           const SizedBox(height: 12),
           _LabelValue(
               label: 'Data Appello',
@@ -86,7 +91,11 @@ class _ExamDetailScreenState extends State<ExamDetailScreen> {
             children: [
               Expanded(
                 child: _LabelValue(
-                    label: 'CFU', value: course == null ? '—' : '${course.cfu}'),
+                  label: 'CFU',
+                  value: course != null
+                      ? '${course.cfu}'
+                      : (exam.cfu != null ? '${exam.cfu}' : '—'),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -136,50 +145,53 @@ class _ExamDetailScreenState extends State<ExamDetailScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
-          Card(
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Registra voto',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.secondary)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _GradeInput(
-                          initial: exam.grade,
-                          onSubmit: (g) async {
-                            await context
-                                .read<ExamProvider>()
-                                .registerGrade(exam.id, g);
-                            if (context.mounted) {
-                              AppSnackbar.show(context,
-                                  'Voto registrato: $g',
-                                  icon: Icons.check);
-                            }
-                          },
+          // Il voto si registra SOLO quando l'esame è stato completato.
+          if (exam.status == ExamStatus.completato) ...[
+            const SizedBox(height: 16),
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Registra voto',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.secondary)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _GradeInput(
+                            initial: exam.grade,
+                            onSubmit: (g) async {
+                              await context
+                                  .read<ExamProvider>()
+                                  .registerGrade(exam.id, g);
+                              if (context.mounted) {
+                                AppSnackbar.show(context,
+                                    'Voto registrato: $g',
+                                    icon: Icons.check);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (exam.grade != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Voto corrente: ${exam.grade}${exam.grade == 31 ? "L" : ""}',
+                          style: const TextStyle(color: AppColors.success),
                         ),
                       ),
-                    ],
-                  ),
-                  if (exam.grade != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        'Voto corrente: ${exam.grade}${exam.grade == 31 ? "L" : ""}',
-                        style: const TextStyle(color: AppColors.success),
-                      ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
