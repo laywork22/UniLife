@@ -1,0 +1,247 @@
+\documentclass[a4paper, 12pt]{article}
+
+% --- Pacchetti Fondamentali ---
+\usepackage{svg}
+\usepackage{amsmath}
+\usepackage{float}    % Per forzare il posizionamento con [H]
+\usepackage[utf8]{inputenc}     % Codifica caratteri
+\usepackage[T1]{fontenc}        % Codifica font
+\usepackage[italian]{babel}     % Lingua italiana
+\usepackage{geometry}           % Gestione margini
+\geometry{a4paper, margin=2.5cm}
+\usepackage{lmodern}            % Font leggibile
+\usepackage{enumitem}           % Per liste personalizzate
+\usepackage{graphicx}
+% --- Pacchetti per Tabelle e Grafica ---
+\usepackage{tabularx}
+\usepackage{svg}
+\usepackage{longtable}          % Per tabelle multipagina
+\usepackage{booktabs}           % Per linee tabella professionali
+\usepackage{array}              % Per gestione colonne
+\usepackage{xcolor}             % Per colori
+\usepackage{titlesec}           % Per formattazione titoli
+\usepackage{hyperref}           % Per link e indice
+\newcommand{\req}[1]{\hyperref[req:#1]{#1}}
+% --- Configurazione Link e Colori ---
+\definecolor{linkblue}{RGB}{0, 102, 204}
+\definecolor{headergray}{RGB}{240, 240, 240}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,        % Nero nell'indice per eleganza
+    urlcolor=linkblue,
+    pdftitle={MP_UNILIFE},
+    pdfauthor={ForinoCanzolinoFerrentinoBuonoGenovese}
+}
+
+% --- Definizione Ambiente Caso d'Uso (Stile Immagine) ---
+\newenvironment{usecase}[2]{
+    \vspace{0.5cm}
+    \phantomsection % Crea un'ancora per i link ipertestuali
+    \addcontentsline{toc}{subsection}{#1: #2} % Aggiunge il titolo all'indice (TOC)
+    \noindent\textbf{\large #1: #2} \par \vspace{0.2cm}
+    \begin{itemize}[leftmargin=0pt, label={}]
+}{
+    \end{itemize}
+    \vspace{0.5cm} \hrule \vspace{0.5cm}
+}
+\newcommand{\ucitem}[2]{\item \textbf{#1}: #2}
+\newcommand{\ucflow}[1]{\item \textbf{Flusso di eventi normale}: \begin{enumerate}[label=\arabic*., leftmargin=*] #1 \end{enumerate}}
+\newcommand{\ucalt}[1]{\item \textbf{Flussi di eventi alternativi}: \begin{itemize}[leftmargin=*] #1 \end{itemize}}
+
+\begin{document}
+
+% --- FRONTESPIZIO ---
+% Title Page
+\begin{titlepage}
+    \begin{center}
+        % University Logo
+        \includegraphics[width=0.2\textwidth]{logo_standard.png}\\[1cm]
+        
+        % University and Department Information
+        {\Large\textbf{Università degli Studi di Salerno}}\\[0.5cm]
+        {\large\textbf{Dipartimento di Ingegneria dell’Informazione ed Elettrica e Matematica applicata}}\\[1.5cm]
+        
+        % Degree Program
+        {\Large \textbf{Corso di Laurea Triennale in Ingegneria Informatica}}\\[2cm]
+        
+        % Thesis Title
+        %PROGETTAZIONE E SVILUPPO DI UNA PIATTAFORMA DIGITALE PER LA GESTIONE DELLE PRENOTAZIONI. 
+        {\Huge \textbf{Mobile Programming}}\\[0.5cm]
+        {\Large \textbf{UniLife}}\\[3cm]
+        {\large \textbf{}}\\[1cm]
+        \end{center}
+        
+        \noindent
+    
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \raggedleft
+        \textbf{Studenti:} \\
+        \textit{{Emiddio Ferrentino}}\\
+        \textit{{Lucia Canzolino}}\\
+        \textit{{Matteo Buono}}\\
+        \textit{{Gaetano Alessio Forino}}\\
+        \textit{{Rosa Genovese}}\\
+    \end{minipage}
+    
+    \vfill
+    % Academic Year
+    \begin{center}
+        {\large Anno Accademico 2025/2026}\\[0.5cm]
+        \end{center}
+\end{titlepage}
+
+% --- INDICE ---
+\newpage
+\tableofcontents
+\newpage
+\section{Introduzione}
+La presente relazione descrive la progettazione e lo sviluppo di UniLife, un'applicazione mobile pensata per supportare lo studente universitario nell'organizzazione del proprio percorso di studio. 
+
+L'obiettivo dell'applicazione è offrire un unico strumento coerente in cui gestire i corsi seguiti, tenere traccia degli esami e delle scadenze, pianificare le sessioni di studio, organizzare attività e obiettivi personali e, infine, monitorare il tempo dedicato allo studio attraverso un timer che consente l'adozione del metodo \emph{Pomodoro}. 
+
+L'idea di fondo è che la frammentazione tipica degli strumenti usati da uno studente, quali, ad esempio, un'app per il calendario, una per le note e di un foglio di calcolo per i voti, possa essere ricondotta a un'unica esperienza progettata in modo oculato tenendo conto delle reali necessità dello studente per quanto riguarda la vita universitaria.
+
+UniLife è stata concepita come un'applicazione che non prevede il log-in ed è completamente offline; infatti, tutti i dati risiedono localmente sul dispositivo, senza alcuna dipendenza da servizi remoti o da un backend. 
+
+Questa scelta, oltre a essere coerente con i vincoli del progetto, riflette la natura personale dello strumento, in cui l'utente è al tempo stesso l'unico produttore e fruitore delle informazioni gestite. 
+
+L'interfaccia è organizzata attorno a quattro aree principali, ossia Dashboard, Corsi, Esami e Focus, accessibili tramite una barra di navigazione inferiore, con la Dashboard a fungere da punto di sintesi che aggrega scadenze imminenti, statistiche di avanzamento e attività della giornata.
+
+
+Dal punto di vista tecnologico, l'applicazione è stata sviluppata in Flutter adottando il linguaggio Dart. 
+
+La gestione dello stato è implementata attraverso l'adozione del \emph{pattern Provider} e del \emph{pattern ChangeNotifier}, mentre la persistenza dei dati strutturati è affidata a SQFLite, ossia è un plugin per Flutter che consente di integrare un database relazionale SQLite per archiviare dati strutturati in locale su dispositivi mobili, e, infine, la navigazione tra schermate è gestita in modo dichiarativo con GoRouter mentre e l'aspetto visivo si basa su Material 3 con il supporto di temi stagionali personalizzabili. 
+
+L'architettura è organizzata a livelli secondo il principio UI → Provider → Repository → Database, in modo da mantenere una netta separazione delle responsabilità.
+
+
+Tra le funzionalità realizzate, l'applicazione consente le operazioni di inserimento, consultazione, modifica ed eliminazione su tutte le entità principali (corsi, esami, sessioni e attività), offre strumenti di ricerca, filtro e organizzazione dei dati, e fornisce una sezione di riepilogo statistico sull'andamento dello studio. 
+
+Sono inoltre integrate due feature avanzate effettivamente parte del flusso applicativo: un calendario mensile degli impegni e un timer con notifiche per la misurazione del tempo di studio.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\linewidth]{unilife_presentazione.png}
+    \caption{Presentazione dell'app}
+    \label{fig:segregazione_rete}
+\end{figure}
+
+\section{Descrizione dell'Applicazione}
+Lo scopo di questa sezione è quella di presentare una descrizione approfondita dell'app che è stata sviluppata.
+
+
+\subsection{Obiettivo dell'Applicazione}
+L'obiettivo di UniLife è fornire allo studente universitario un unico strumento mobile per organizzare lo studio, pianificare le attività e monitorare l'andamento della propria carriera accademica.
+
+L'applicazione consente di gestire in modo integrato quattro entità fondamentali — i corsi (il "libretto"), gli esami e le relative scadenze, le sessioni di studio e le attività/obiettivi personali — e di ricavare da questi dati riepiloghi statistici utili a valutare i propri progressi: numero di CFU acquisiti, media dei voti, distribuzione degli esami per stato, ore di studio dedicate a ciascun corso e attività ancora da completare.
+
+
+Più che un semplice contenitore di dati, UniLife è pensata come uno strumento di supporto attivo allo studio: oltre alla registrazione e consultazione delle informazioni, integra un timer, appositamente progettato per l'utilizzo della tecnica Pomodoro, per la misurazione del tempo di focus e un calendario mensile che aggrega visivamente gli impegni. L'applicazione è interamente single-user e offline, coerentemente con la sua natura di strumento personale in cui lo studente è al tempo stesso unico produttore e fruitore delle informazioni gestite.
+
+
+\subsubsection{Tipologia di utenti a cui è rivolta}
+L'unico attore previsto dal sistema è lo studente universitario. 
+
+Si tratta di un utente che frequenta più corsi contemporaneamente, deve sostenere esami distribuiti lungo l'anno accademico e ha l'esigenza di pianificare il proprio tempo di studio in autonomia. 
+
+Il target dell'applicazione è uno studente che già utilizza, in modo frammentato, diversi strumenti digitali, quali calendari, applicazioni di note, fogli di calcolo per tenere traccia di voti e CFU) e che trarrebbe beneficio da un'unica applicazione coesa.
+
+
+Trattandosi di un'applicazione mono-utente, non sono previsti ruoli differenziati né meccanismi di autenticazione o condivisione: ogni installazione serve un singolo studente e gestisce esclusivamente i suoi dati locali.
+
+Questa scelta semplifica il modello di interazione e consente di concentrare lo sforzo progettuale sulla qualità dell'esperienza individuale piuttosto che sulla gestione multi-utente.
+
+
+\subsubsection{Problema che l'app intende risolvere}
+Il problema che \emph{l'applicativo mobile} si pone come obiettivo di risolvere è la dispersione organizzativa tipica della gestione dello studio universitario.
+
+Le informazioni rilevanti per uno studente, ossia quali esami sono in programma, a che punto è la preparazione degli stessi, quanto tempo è stato dedicato a una materia, quali attività restano da svolgere, quando scadono le consegne, sono spesso contenute su strumenti eterogenei e non comunicanti tra loro, quali, ad esempio, applicazione tra loro diverse che non sono raggruppabili in uno stesso ecosistema. 
+
+Questa frammentazione rende difficile per lo studente avere una visione d'insieme dell'avanzamento dei propri studi e causa una pianificazione poco efficace nel tempo.
+
+UniLife affronta il problema centralizzando in un'unica applicazione la gestione di corsi, esami, sessioni e attività, e mettendo questi dati in relazione tra loro: un esame è associato a un corso, una sessione di studio o un'attività possono essere collegate al corso di riferimento, e il tempo misurato con il timer confluisce nelle ore effettive registrate. 
+
+Su questa base relazionale l'applicazione costruisce automaticamente riepiloghi e indicatori di avanzamento, trasformando dati altrimenti sparsi in informazioni immediatamente leggibili e chiare. 
+
+L'adozione di un funzionamento completamente offline ottenuto mediante una persistenza locale, garantisce inoltre disponibilità e riservatezza dei dati, senza dipendere dalla connettività o da servizi esterni.
+
+
+\subsection{Principali scenari d'uso}
+Gli scenari d'uso individuati riflettono i casi d'uso e il business flow previsti dalla specifica dei requisiti. 
+Di seguito si illustrano i più rappresentativi:
+\begin{itemize}
+    \item Gestione del libretto e degli esami: Lo studente inserisce i corsi del proprio piano di studi specificando informazioni come nome, docente, CFU, semestre e stato. A ciascun corso associa gli esami da sostenere, indicandone data, tipologia e priorità. Una volta sostenuto un esame, ne aggiorna lo stato e ne registra il voto: il sistema riflette automaticamente questa informazione negli indicatori aggregati, ad esempio nel ricalcolo della media e dei CFU acquisiti. Questo scenario corrisponde al ciclo di vita dell'esame, dalla registrazione alla chiusura dello stesso con voto.
+    \item Pianificazione e svolgimento dello studio: Lo studente pianifica le proprie sessioni di studio associandole a un giorno e a un corso di riferimento, definendone tipologia e orario. Le sessioni vengono organizzate in una vista settimanale e possono essere marcate come completate, registrando i minuti effettivamente impiegati. Le informazioni raccolte alimentano le statistiche, chiudendo il ciclo che dalla pianificazione porta all'aggiornamento dei riepiloghi.
+    \item Gestione delle attività e degli obiettivi: Lo studente crea attività da completare e obiettivi personali, eventualmente collegandoli a un corso e attribuendo loro una priorità e una scadenza. Le attività possono essere consultate, modificate e marcate come completate; la dashboard ne mette in evidenza quelle del giorno, supportando la gestione quotidiana del carico di lavoro.
+    \item Monitoraggio dell'avanzamento: Attraverso la dashboard, lo studente consulta in un'unica sezione le scadenze imminenti, un indicatore visivo del completamento delle attività e le statistiche principali, quali CFU, media, distribuzione degli esami. Lo scenario consente di valutare a colpo d'occhio lo stato di avanzamento della propria carriera e di individuare i corsi che richiedono maggiore attenzione.
+    \item Sessione di studio focalizzata (Pomodoro): Quando lo studente ha l'esigenza di studiare con maggior concentrazione, decidendo di adottare la tecnica del pomodoro, associa un timer a un corso o a un'attività e avvia un conto alla rovescia. Al termine, l'applicazione invia una notifica e il tempo svolto viene accumulato tra le ore effettive dell'entità selezionata. In caso di interruzione anticipata, il sistema consente di salvare i minuti parziali o di scartare la sessione.
+\item Consultazione contestuale e organizzazione dei dati: Lo studente ricerca e filtra gli elementi gestiti — ad esempio i corsi per nome o docente, gli esami per data o stato, le attività per priorità — per raggiungere rapidamente l'informazione cercata. Dal dettaglio di un corso può inoltre accedere in modo aggregato agli esami e alle attività collegate e aprire gli eventuali materiali di studio associati tramite il browser di sistema.
+\end{itemize}
+\section{Analisi dei Requisiti}
+\subsection{Funzionalità implementate}
+L'applicazione implementa l'intero nucleo funzionale previsto dalla specifica dei requisiti. 
+
+Si descrivono di seguito le funzionalità realizzate, raggruppate per area.
+\begin{itemize}
+    \item Gestione dei corsi (IF-1). È disponibile la gestione completa del libretto: lo studente può visualizzare l'elenco dei corsi, consultarne il dettaglio aggregato, inserirne di nuovi, modificarli ed eliminarli. Per ogni corso sono rappresentati nome, docente, CFU, semestre, stato, voto ottenuto, descrizione, note ed eventuali materiali associati (DF-1.1). La schermata di dettaglio aggrega in un'unica vista gli esami e le attività collegate al corso (UC-10).
+    \item Gestione di esami e scadenze (IF-2). Lo studente può inserire, modificare ed eliminare esami associandoli a un corso, specificandone titolo, data, tipologia, priorità e note (DF-1.2). È possibile distinguere lo stato dell'esame tra futuro, completato e annullato, e registrare il voto entro l'intervallo 18–31(30L). La validazione impedisce l'inserimento di date antecedenti a quella odierna.
+    \item Pianificazione delle sessioni di studio (IF-3). L'applicazione consente di pianificare sessioni di studio associate a un giorno e a un corso, con titolo, tipologia e orari di inizio e fine (DF-1.3). Le sessioni sono organizzate in una vista settimanale e possono essere marcate come completate registrando i minuti effettivamente impiegati.
+    \item Gestione di attività e obiettivi (IF-4). È possibile creare, modificare, eliminare e completare attività e obiettivi, attribuendo a ciascuno titolo, descrizione, corso di riferimento, priorità, scadenza e tempo stimato per il completamento (DF-1.4). Il completamento di un'attività ne aggiorna lo stato registrando il momento di chiusura.
+    \item Ricerca, filtri e organizzazione (IF-5). Sono implementate funzionalità di ricerca e filtro coerenti con il dominio: ricerca dei corsi per nome o docente, filtri dei corsi per stato, distinzione tra corsi correnti e terminati, raggruppamento degli esami per data e gestione delle attività per priorità e stato di completamento (UC-6).
+    \item Riepiloghi e statistiche (IF-6). La dashboard fornisce una sintesi dell'andamento dello studio: CFU acquisiti, media dei voti, distribuzione degli esami, percentuale di completamento delle attività e scadenze imminenti (UC-7). Gli indicatori sono calcolati dinamicamente e si aggiornano al variare dei dati sottostanti.
+    \item Requisiti di interfaccia (UI-1). Sono stati realizzati gli empty state con call-to-action per le liste vuote (UI-1.3), le conferme esplicite tramite dialog per le eliminazioni e i feedback tramite snackbar per salvataggi e modifiche (UI-1.4/1.6), la validazione inline dei form con messaggi contestuali (UI-1.5) e il supporto al tema chiaro e scuro basato su Material 3 (UI-1.2).
+    \item Integrazioni di sistema (IS-1). L'applicazione invia notifiche al termine del timer, attive anche in background (IS-1.1), e consente l'apertura dei materiali di studio tramite il browser di sistema (IS-1.2).
+    \item Vincoli tecnologici (FC). Il progetto rispetta i vincoli previsti: sviluppo in Flutter (FC-1), persistenza locale e funzionamento completamente offline tramite SQFLite (FC-2), navigazione con \emph{go\_router} e passaggio esplicito di parametri tra schermate (FC-4), e impiego di ListView.builder per garantire liste fluide anche con un numero elevato di elementi (FC-5).
+\end{itemize}
+\subsection{Progettazione Database}
+\subsubsection{Schema E-R (UML)}
+\includegraphics[scale=0.65]{diagramma_er_mobile.pdf}
+\subsubsection{Schema Logico}
+\includegraphics[width=\textwidth]{schema_logico.pdf}
+
+\subsection{Funzionalità considerate ma non implementate}
+In fase di progettazione alcune scelte si sono discostate dalla specifica iniziale; tali decisioni sono state assunte consapevolmente per migliorare la coerenza interna dell'applicazione.
+\begin{itemize}
+    \item Struttura di navigazione a quattro tab (UI-1.1). L'applicazione adotta una struttura a quattro tab (Dashboard, Corsi, Esami, Focus). La scelta nasce dall'esigenza di ridurre le ridondanze: la Dashboard accorpa le statistiche e le attività del giorno, mentre la pianificazione è raggiunta in modo contestuale attraverso il calendario, senza necessità di un tab dedicato.
+    \item Libreria grafica fl\_chart (IF-6). La specifica indicava l'uso di fl\_chart per la generazione dei grafici. Per l'indicatore principale di completamento della dashboard si è preferito realizzare un anello disegnato a mano tramite CustomPainter, soluzione più leggera e priva di dipendenze esterne per il caso d'uso specifico.
+    \item Copertura di test (qualità). Non è stata sviluppata una suite di test completa. Sono presenti test unitari sulle funzioni di validazione, mentre per il resto del codice ci si è affidati all'analisi statica fornita da flutter analyze. Una copertura più estesa, con test sui provider e sulle schermate principali, è stata considerata ma non effettuata per ragioni organizzative e di tempo.
+\end{itemize}
+\subsection{Feature avanzate scelte}
+La traccia richiede l'implementazione di almeno due feature avanzate effettivamente integrate nell'applicazione. UniLife ne realizza due pienamente operative, oltre a un'estensione opzionale dell'interfaccia.
+La prima è un alendario mensile (UC-8). È disponibile una vista a calendario, realizzata con la libreria table\_calendar e localizzata in italiano, che mappa sui rispettivi giorni gli eventi provvisti di data (esami, sessioni e attività).
+
+Selezionando un giorno, l'utente accede al dettaglio degli eventi corrispondenti e può navigare in modo contestuale verso le entità collegate.
+
+La seconda è un timer strutturato appositamente per l'adozione della tecnica del pomodoro (UC-9).
+
+L'applicazione integra un timer di studio in modalità Pomodoro, associabile a un corso o a un'attività.
+
+Al termine del conto alla rovescia, il sistema invia una notifica locale e accumula i minuti svolti tra le ore effettive dell'entità selezionata. 
+
+In caso di interruzione anticipata, l'utente può scegliere se salvare i minuti parziali o scartare la sessione.
+
+Temi stagionali (variazione sul tema). A complemento delle feature richieste, è stato realizzato un sistema di temi personalizzabili che, oltre alla modalità chiara/scura, offre alcuni preset stagionali. 
+
+Pur non essendo una feature avanzata in senso stretto, arricchisce l'esperienza d'uso e dimostra la flessibilità del sistema di theming basato su Material 3.
+
+\subsection{Eventuali limitazioni note}
+Si segnalano infine alcune limitazioni note, in parte derivanti da scelte progettuali consapevoli e in parte dal perimetro definito per il progetto.
+
+L'applicazione è single-user e priva di meccanismi di autenticazione: ogni installazione gestisce i dati di un singolo studente, senza profili multipli né condivisione.
+
+Essendo completamente offline, non sono previsti sincronizzazione su cloud né backup remoto dei dati, che risiedono unicamente sul dispositivo; la loro persistenza è quindi legata all'installazione locale dell'applicazione.
+
+Sul piano implementativo, le operazioni di inserimento, modifica ed eliminazione comportano una ricarica completa della lista dall'archivio anziché un aggiornamento puntuale dei dati già in memoria.
+
+La scelta privilegia la semplicità e la coerenza prevedibile dei dati rispetto all'ottimizzazione delle prestazioni; in un'applicazione di dimensioni maggiori si potrebbe intervenire aggiornando selettivamente lo stato in memoria.
+
+La gestione delle date non copre tutti i casi di un calendario accademico reale (ad esempio sovrapposizioni, ricorrenze o fasce orarie complesse), ma è limitata a quanto necessario per gli scenari previsti, in linea con le indicazioni della traccia.
+
+Infine, come già rilevato, la copertura di test automatici è parziale e circoscritta alle funzioni di validazione.
+
+
+
+
+
+\end{document}
