@@ -18,7 +18,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Shareware Episode 1 di DOOM (1993) — distribuito liberamente da id Software,
   // hostato dall'Internet Archive con emulatore DOS in-browser.
   static const String _doomUrl =
-      'https://archive.org/details/DoomsharewareEpisode';
+      'https://silentspacemarine.com/';
 
   late final TextEditingController _name;
   int _versionTaps = 0;       // contatore totale, sblocca DOOM al 15°
@@ -46,11 +46,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     AppSnackbar.show(context, 'Nome aggiornato', icon: Icons.check_circle);
   }
 
-  void _onVersionTap() {
+  void _onVersionTap() async {
     // Contatore globale: al 15° tap apriamo DOOM nel browser.
     setState(() => _versionTaps++);
     if (_versionTaps >= 15 && !_doomLaunched && !_launchingDoom) {
-      _launchDoom();
+      await _launchDoom();
+
+      if (mounted) {
+        setState(() {
+          _versionTaps = 0;
+          _darkVersionTaps = 0;
+          _easterEggUnlocked = false;
+          _doomLaunched = false;
+        });
+      }
+
+      return;
     }
 
     // In parallelo: dialog easter egg al 10° tap consecutivo in dark mode.

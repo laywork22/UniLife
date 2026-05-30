@@ -9,6 +9,6 @@ class UrlService {
     final uri = Uri.tryParse(raw);
     if (uri == null) return false;
     if (!await canLaunchUrl(uri)) return false;
-    return launchUrl(uri, mode: LaunchMode.externalApplication);
+    return launchUrl(uri, mode: LaunchMode.inAppWebView);
   }
 }
