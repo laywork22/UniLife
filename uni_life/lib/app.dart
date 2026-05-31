@@ -25,8 +25,18 @@ class UniLifeApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CourseProvider()..load()),
         ChangeNotifierProvider(create: (_) => ExamProvider()..load()),
         ChangeNotifierProvider(create: (_) => SessionProvider()..load()),
-        ChangeNotifierProvider(create: (_) => TaskProvider()..load()),
-        ChangeNotifierProvider(create: (_) => PomodoroProvider()),
+        ChangeNotifierProvider(
+          create: (ctx) {
+            final sessions = ctx.read<SessionProvider>();
+            final tasks = ctx.read<TaskProvider>();
+            return PomodoroProvider(
+              onProgressSaved: () async {
+                await sessions.load();
+                await tasks.load();
+              },
+            );
+          },
+        ),
         ChangeNotifierProxyProvider3<CourseProvider, ExamProvider,
             TaskProvider, StatsProvider>(
           create: (ctx) => StatsProvider(

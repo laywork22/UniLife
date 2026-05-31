@@ -107,7 +107,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/sessions/new',
       name: 'session-new',
-      builder: (_, _) => const SessionFormScreen(),
+      builder: (_, state) {
+        final dateParam = state.uri.queryParameters['date'];
+        final initialDate =
+            dateParam != null ? DateTime.tryParse(dateParam) : null;
+        return SessionFormScreen(initialDate: initialDate);
+      },
     ),
     GoRoute(
       path: '/sessions/:id/edit',

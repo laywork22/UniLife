@@ -3,8 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/date_utils.dart';
+import '../../data/models/study_session.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../state/course_provider.dart';
 import '../../state/exam_provider.dart';
+import '../../state/session_provider.dart';
 import '../../state/stats_provider.dart';
 import '../../state/task_provider.dart';
 import '../../state/theme_provider.dart';
@@ -21,9 +25,13 @@ class DashboardScreen extends StatelessWidget {
     final stats = context.watch<StatsProvider>();
     final exams = context.watch<ExamProvider>();
     final tasks = context.watch<TaskProvider>();
+    final sessions = context.watch<SessionProvider>();
+    final coursesProv = context.watch<CourseProvider>();
 
     final upcoming = exams.upcoming.take(3).toList();
     final todayTasks = tasks.today;
+    // Le sessioni della settimana corrente: pianificate + svolte.
+    final weekSessions = sessions.currentWeek.take(5).toList();
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -142,6 +150,68 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                    const SizedBox(height: 20),
+                    _SectionHeading(
+                      title: 'Prossime sessioni',
+                      action: TextButton.icon(
+                        onPressed: () =>
+                            context.push('/exams/calendar'),
+                        icon: const Icon(Icons.calendar_month, size: 18),
+                        label: const Text('Calendario'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (weekSessions.isEmpty)
+                      Card(
+                        margin: EdgeInsets.zero,
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            children: [
+                              Icon(Icons.menu_book_outlined,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Nessuna sessione pianificata questa settimana.',
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    context.push('/sessions/new'),
+                                child: const Text('Pianifica'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Card(
+                        margin: EdgeInsets.zero,
+                        child: Column(
+                          children: [
+                            for (int i = 0; i < weekSessions.length; i++) ...[
+                              _SessionTile(
+                                session: weekSessions[i],
+                                courseName: coursesProv
+                                    .byId(weekSessions[i].courseId)
+                                    ?.nome,
+                                onTap: () => context.push(
+                                    '/sessions/${weekSessions[i].id}/edit'),
+                              ),
+                              if (i < weekSessions.length - 1)
+                                const Divider(height: 1, indent: 16),
+                            ],
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -149,6 +219,79 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading({required this.title, this.action});
+  final String title;
+  final Widget? action;
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.secondary,
+            ),
+          ),
+        ),
+        ?action,
+      ],
+    );
+  }
+}
+
+class _SessionTile extends StatelessWidget {
+  const _SessionTile({
+    required this.session,
+    required this.onTap,
+    this.courseName,
+  });
+
+  final StudySession session;
+  final String? courseName;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final from = AppDateUtils.time(session.startTime);
+    final to = AppDateUtils.time(session.endTime);
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        width: 42,
+        height: 42,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: (session.isCompleted ? AppColors.success : scheme.primary)
+              .withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          session.isCompleted ? Icons.check : Icons.menu_book_outlined,
+          color: session.isCompleted ? AppColors.success : scheme.primary,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        session.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        '${AppDateUtils.shortDay(session.date)}  ·  $from–$to'
+        '${courseName != null ? "  ·  $courseName" : ""}',
+        style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+      ),
+      trailing: Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
     );
   }
 }

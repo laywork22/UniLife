@@ -11,9 +11,12 @@ import '../../state/exam_provider.dart';
 import '../../state/session_provider.dart';
 
 class SessionFormScreen extends StatefulWidget {
-  const SessionFormScreen({super.key, this.sessionId});
+  const SessionFormScreen({super.key, this.sessionId, this.initialDate});
 
   final String? sessionId;
+
+  final DateTime? initialDate;
+
   bool get isEdit => sessionId != null;
 
   @override
@@ -27,13 +30,14 @@ class _SessionFormScreenState extends State<SessionFormScreen> {
   String? _courseId;
   String? _examId;
   SessionType _type = SessionType.studio;
-  DateTime _date = DateTime.now();
+  late DateTime _date;
   TimeOfDay _start = const TimeOfDay(hour: 14, minute: 0);
   TimeOfDay _end = const TimeOfDay(hour: 16, minute: 0);
 
   @override
   void initState() {
     super.initState();
+    _date = widget.initialDate ?? DateTime.now();
     if (widget.isEdit) {
       final s = context.read<SessionProvider>().byId(widget.sessionId!);
       if (s != null) {

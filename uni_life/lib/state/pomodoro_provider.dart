@@ -1,20 +1,39 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../core/constants/app_constants.dart';
+import '../data/models/enums.dart';
+import '../data/models/study_session.dart';
 import '../data/models/task.dart';
+import '../data/repositories/session_repository.dart';
+import '../data/repositories/task_repository.dart';
 import '../services/notification_service.dart';
 
 enum PomodoroState { idle, running, paused, done }
 
-/// Stato del Pomodoro (UC-9). Tiene il timer, l'entità collegata
-/// e a fine sessione registra i minuti sul task o sul corso scelti.
+/// Stato del Pomodoro (UC-9). Gestisce il timer, l'entità collegata
+/// (task / corso) e, al termine della sessione, **persiste una
+/// `StudySession`** nel database con i minuti effettivamente svolti.
+/// Se è collegato un task ne aggiorna anche il campo `actualMinutes`.
 class PomodoroProvider extends ChangeNotifier {
-  PomodoroProvider({NotificationService? notifications})
-      : _notifications = notifications ?? NotificationService.instance;
+  PomodoroProvider({
+    NotificationService? notifications,
+    SessionRepository? sessionRepository,
+    TaskRepository? taskRepository,
+    this.onProgressSaved,
+  })  : _notifications = notifications ?? NotificationService.instance,
+        _sessionRepo = sessionRepository ?? SessionRepository(),
+        _taskRepo = taskRepository ?? TaskRepository();
 
   final NotificationService _notifications;
+  final SessionRepository _sessionRepo;
+  final TaskRepository _taskRepo;
+
+  final Future<void> Function()? onProgressSaved;
+
+  final _uuid = const Uuid();
 
   Timer? _ticker;
   int _remainingSeconds = AppConstants.pomodoroMinutes * 60;
@@ -75,7 +94,8 @@ class PomodoroProvider extends ChangeNotifier {
     _ticker?.cancel();
     if (saveProgress) {
       final elapsed = _totalSeconds - _remainingSeconds;
-      _accumulateMinutes(elapsed ~/ 60);
+      // Fire and forget: la UI non blocca sull'insert.
+      unawaited(_persistProgress(elapsed ~/ 60));
     }
     _state = PomodoroState.idle;
     _remainingSeconds = _totalSeconds;
@@ -94,7 +114,7 @@ class PomodoroProvider extends ChangeNotifier {
       _ticker?.cancel();
       _remainingSeconds = 0;
       _state = PomodoroState.done;
-      _accumulateMinutes(_totalSeconds ~/ 60);
+      unawaited(_persistProgress(_totalSeconds ~/ 60));
       _notifications.showPomodoroDone();
       notifyListeners();
       return;
@@ -103,11 +123,38 @@ class PomodoroProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _accumulateMinutes(int minutes) {
+  Future<void> _persistProgress(int minutes) async {
     if (minutes <= 0) return;
-    // I provider che osservano (TaskProvider, CourseProvider) possono leggere
-    // _linkedTask/_linkedCourseId e aggiornare. In questa versione ci limitiamo
-    // a notificare: l'aggregazione su DB è demandata a chi consuma lo stato.
+    try {
+      final endTime = DateTime.now();
+      final startTime = endTime.subtract(Duration(minutes: minutes));
+      final today = DateTime(endTime.year, endTime.month, endTime.day);
+
+      final session = StudySession(
+        id: _uuid.v4(),
+        title: _linkedTask?.title ?? 'Sessione Pomodoro',
+        courseId: _linkedCourseId,
+        date: today,
+        startTime: startTime,
+        endTime: endTime,
+        type: SessionType.studio,
+        isCompleted: true,
+        actualMinutes: minutes,
+      );
+      await _sessionRepo.insert(session);
+
+      if (_linkedTask != null) {
+        final updated = _linkedTask!.copyWith(
+          actualMinutes: _linkedTask!.actualMinutes + minutes,
+        );
+        await _taskRepo.update(updated);
+        _linkedTask = updated;
+      }
+
+      await onProgressSaved?.call();
+    } catch (_) {
+
+    }
   }
 
   @override

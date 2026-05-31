@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -31,17 +32,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final events = <_CalendarEvent>[];
     for (final e in exams) {
       if (AppDateUtils.isSameDay(e.date, day)) {
-        events.add(_CalendarEvent.exam(e));
+        events.add(_CalendarEvent.exam(
+          e,
+          onTap: () => context.push('/exams/${e.id}'),
+        ));
       }
     }
     for (final s in sessions) {
       if (AppDateUtils.isSameDay(s.date, day)) {
-        events.add(_CalendarEvent.session(s));
+        events.add(_CalendarEvent.session(
+          s,
+          onTap: () => context.push('/sessions/${s.id}/edit'),
+        ));
       }
     }
     for (final t in tasks) {
       if (t.dueDate != null && AppDateUtils.isSameDay(t.dueDate!, day)) {
-        events.add(_CalendarEvent.task(t));
+        events.add(_CalendarEvent.task(
+          t,
+          onTap: () => context.push('/tasks/${t.id}/edit'),
+        ));
       }
     }
     return events;
@@ -56,9 +66,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
     context.watch<SessionProvider>();
     context.watch<TaskProvider>();
 
+    // Codifica la data selezionata come query parameter per precompilare
+    // la data nel form di nuova sessione (UC-3).
+    final selectedIso = selected.toIso8601String();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Calendario: ${AppDateUtils.monthYear(_focused)}'),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/sessions/new?date=$selectedIso'),
+        icon: const Icon(Icons.add),
+        label: const Text('Sessione'),
       ),
       body: Column(
         children: [
@@ -113,7 +132,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 96),
                     itemCount: events.length,
                     itemBuilder: (_, i) => _EventTile(event: events[i]),
                   ),
@@ -129,34 +148,43 @@ class _CalendarEvent {
   final String subtitle;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const _CalendarEvent({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
-  factory _CalendarEvent.exam(Exam e) => _CalendarEvent(
+  factory _CalendarEvent.exam(Exam e, {required VoidCallback onTap}) =>
+      _CalendarEvent(
         title: '${AppDateUtils.time(e.date)} — ${e.title}',
         subtitle: 'Esame',
         icon: Icons.event,
         color: AppColors.primary,
+        onTap: onTap,
       );
 
-  factory _CalendarEvent.session(StudySession s) => _CalendarEvent(
+  factory _CalendarEvent.session(StudySession s,
+          {required VoidCallback onTap}) =>
+      _CalendarEvent(
         title:
             '${AppDateUtils.time(s.startTime)} — ${s.title} (${s.type.label})',
         subtitle: 'Sessione',
         icon: Icons.menu_book,
         color: AppColors.info,
+        onTap: onTap,
       );
 
-  factory _CalendarEvent.task(Task t) => _CalendarEvent(
+  factory _CalendarEvent.task(Task t, {required VoidCallback onTap}) =>
+      _CalendarEvent(
         title: t.title,
         subtitle: 'Task',
         icon: Icons.check_box_outlined,
         color: AppColors.warning,
+        onTap: onTap,
       );
 }
 
@@ -175,6 +203,10 @@ class _EventTile extends StatelessWidget {
         ),
         title: Text(event.title),
         subtitle: Text(event.subtitle),
+        onTap: event.onTap,
+        trailing: event.onTap == null
+            ? null
+            : const Icon(Icons.chevron_right, color: AppColors.textSecondary),
       ),
     );
   }

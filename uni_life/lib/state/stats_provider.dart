@@ -25,10 +25,7 @@ class StatsProvider extends ChangeNotifier {
 
   void _onChange() => notifyListeners();
 
-  /// CFU acquisiti = somma dei CFU dei corsi con almeno un esame `completato`
-  /// (un esame `annullato` non concorre, anche se lo `stato` del corso è
-  /// `superato`). Verrà aggiornata in [_orphanContribution] per gli esami
-  /// "standalone" (senza corso) appena introdotti.
+
   int get cfuAcquisiti {
     int total = 0;
     for (final c in _courses.all) {
@@ -42,7 +39,6 @@ class StatsProvider extends ChangeNotifier {
   int get cfuTotali =>
       _courses.all.fold<int>(0, (acc, c) => acc + c.cfu) + _orphanCfu;
 
-  /// CFU degli esami standalone (senza corso) già superati.
   int get _orphanCfu => _exams.all
       .where((e) =>
           e.courseId == null &&
@@ -50,23 +46,17 @@ class StatsProvider extends ChangeNotifier {
           e.cfu != null)
       .fold<int>(0, (acc, e) => acc + (e.cfu ?? 0));
 
-  /// Media voti ponderata sui CFU.
-  /// Per ogni corso con un esame `completato` (vedi [ExamProvider.latestPassedGrade])
-  /// usiamo `course.cfu` come peso e il voto dell'ultimo esame superato.
-  /// Inoltre concorrono alla media gli esami "standalone" (senza corso)
-  /// `completato` con voto e `cfu` valorizzati.
+  
   double get mediaPonderata {
     int totWeight = 0;
     int totGrade = 0;
-    // 1) Esami associati a un corso.
     for (final c in _courses.all) {
       final grade = _exams.latestPassedGrade(c.id);
       if (grade == null) continue;
-      final effective = grade.clamp(18, 30); // 31 = lode → 30 in media
+      final effective = grade.clamp(18, 30);
       totWeight += c.cfu;
       totGrade += effective * c.cfu;
     }
-    // 2) Esami standalone.
     for (final e in _exams.all) {
       if (e.courseId != null) continue;
       if (e.status != ExamStatus.completato) continue;
@@ -86,7 +76,6 @@ class StatsProvider extends ChangeNotifier {
   int get esamiProssimi =>
       _exams.all.where((e) => e.status == ExamStatus.prossimo).length;
 
-  /// Percentuale completamento task del giorno (UC-7).
   double get completamentoOggi {
     final today = _tasks.today;
     if (today.isEmpty) return 0;
