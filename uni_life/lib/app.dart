@@ -25,6 +25,7 @@ class UniLifeApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CourseProvider()..load()),
         ChangeNotifierProvider(create: (_) => ExamProvider()..load()),
         ChangeNotifierProvider(create: (_) => SessionProvider()..load()),
+        ChangeNotifierProvider(create: (_) => TaskProvider()..load()),
         ChangeNotifierProvider(
           create: (ctx) {
             final sessions = ctx.read<SessionProvider>();
