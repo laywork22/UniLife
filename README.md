@@ -23,6 +23,7 @@ L'interfaccia utente è progettata per essere immediata e priva di ridondanze, s
 * **Corsi:** L'elenco completo delle materie, suddiviso tra corsi correnti e terminati.
 * **Esami:** Il calendario degli appelli e il registro dei risultati ottenuti.
 * **Focus:** La schermata interamente dedicata alla concentrazione tramite il timer Pomodoro.
+* **Sessione Studio:** La schermata che consente di pianificare attentamente cosa studiare imponendo degli obiettivi a breve o a lungo termine 
 
 ---
 
